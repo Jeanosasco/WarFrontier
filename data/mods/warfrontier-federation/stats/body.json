@@ -1,0 +1,17 @@
+{
+  "FED-H01": {
+    "armourHeat": 55,
+    "armourKinetic": 45,
+    "buildPoints": 420,
+    "buildPower": 190,
+    "class": "Federation",
+    "hitpoints": 720,
+    "id": "FED-H01",
+    "model": "Viper.PIE",
+    "name": "Guardian Phaser Body",
+    "powerOutput": 28000,
+    "size": "MEDIUM",
+    "weaponSlots": 1,
+    "weight": 5800
+  }
+}
