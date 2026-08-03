@@ -24,6 +24,14 @@ jobs:
           fetch-depth: 0
           path: upstream
 
+      - name: Record upstream commit SHA
+        id: upstream_sha
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Checkout WarFrontier documentation
         uses: actions/checkout@v4
         with:
@@ -31,13 +39,26 @@ jobs:
           ref: main
           path: warfrontier
 
+      - name: Strip GitHub Actions workflow files from imported history
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream
+          export FILTER_BRANCH_SQUELCH_WARNING=1
+          git filter-branch --force --index-filter \
+            'git rm -r --cached --ignore-unmatch .github/workflows' \
+            --prune-empty -- --all
+          rm -rf .git/refs/original/
+          git reflog expire --expire=now --all
+          git gc --prune=now
+
       - name: Overlay WarFrontier project files
         shell: bash
         run: |
           set -euo pipefail
           cd upstream
 
-          mkdir -p docs .github/workflows
+          mkdir -p docs
 
           cp ../warfrontier/README.md README.md
           cp ../warfrontier/ROADMAP.md ROADMAP.md
@@ -45,14 +66,12 @@ jobs:
           cp ../warfrontier/CONTRIBUTING.md CONTRIBUTING.md
           cp ../warfrontier/docs/GAME_VISION.md docs/GAME_VISION.md
           cp ../warfrontier/docs/LICENSE_NOTES.md docs/LICENSE_NOTES.md
-          cp ../warfrontier/.github/workflows/import-warzone-upstream.yml .github/workflows/import-warzone-upstream.yml
 
-          UPSTREAM_SHA=$(git rev-parse HEAD)
-          printf '%s\n' "$UPSTREAM_SHA" > docs/UPSTREAM_BASE_COMMIT.txt
+          printf '%s\n' "${{ steps.upstream_sha.outputs.sha }}" > docs/UPSTREAM_BASE_COMMIT.txt
 
           git config user.name "WarFrontier Automation"
           git config user.email "actions@users.noreply.github.com"
-          git add README.md ROADMAP.md CHANGELOG.md CONTRIBUTING.md docs .github/workflows/import-warzone-upstream.yml
+          git add README.md ROADMAP.md CHANGELOG.md CONTRIBUTING.md docs
           git commit -m "chore: establish WarFrontier on Warzone 2100 upstream" || true
 
       - name: Push imported history to develop
@@ -64,5 +83,3 @@ jobs:
           cd upstream
           git remote add warfrontier "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git push warfrontier HEAD:develop --force
-
-# Trigger refresh: 2026-08-03
