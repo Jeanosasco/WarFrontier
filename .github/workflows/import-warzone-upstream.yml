@@ -64,3 +64,5 @@ jobs:
           cd upstream
           git remote add warfrontier "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git push warfrontier HEAD:develop --force
+
+# Trigger refresh: 2026-08-03
