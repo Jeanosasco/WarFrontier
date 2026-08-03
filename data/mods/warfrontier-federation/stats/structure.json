@@ -1,0 +1,25 @@
+{
+  "FED-D06": {
+    "armour": 60,
+    "breadth": 2,
+    "buildPoints": 900,
+    "buildPower": 300,
+    "ecmID": "ZNULLECM",
+    "height": 3,
+    "hitpoints": 2400,
+    "id": "FED-D06",
+    "name": "Multiphase Deflector Array",
+    "resistance": 220,
+    "sensorID": "DefaultSensor1Mk1",
+    "strength": "HARD",
+    "structureModel": [
+      "A0ADemolishStructure.PIE"
+    ],
+    "thermal": 80,
+    "type": "DEFENSE",
+    "weapons": [
+      "FED-WPN-001"
+    ],
+    "width": 2
+  }
+}
