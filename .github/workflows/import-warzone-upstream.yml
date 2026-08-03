@@ -1,0 +1,66 @@
+name: Import Warzone 2100 Upstream
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/import-warzone-upstream.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Warzone 2100 with full history
+        uses: actions/checkout@v4
+        with:
+          repository: Warzone2100/warzone2100
+          ref: master
+          fetch-depth: 0
+          path: upstream
+
+      - name: Checkout WarFrontier documentation
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: main
+          path: warfrontier
+
+      - name: Overlay WarFrontier project files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream
+
+          mkdir -p docs .github/workflows
+
+          cp ../warfrontier/README.md README.md
+          cp ../warfrontier/ROADMAP.md ROADMAP.md
+          cp ../warfrontier/CHANGELOG.md CHANGELOG.md
+          cp ../warfrontier/CONTRIBUTING.md CONTRIBUTING.md
+          cp ../warfrontier/docs/GAME_VISION.md docs/GAME_VISION.md
+          cp ../warfrontier/docs/LICENSE_NOTES.md docs/LICENSE_NOTES.md
+          cp ../warfrontier/.github/workflows/import-warzone-upstream.yml .github/workflows/import-warzone-upstream.yml
+
+          UPSTREAM_SHA=$(git rev-parse HEAD)
+          printf '%s\n' "$UPSTREAM_SHA" > docs/UPSTREAM_BASE_COMMIT.txt
+
+          git config user.name "WarFrontier Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add README.md ROADMAP.md CHANGELOG.md CONTRIBUTING.md docs .github/workflows/import-warzone-upstream.yml
+          git commit -m "chore: establish WarFrontier on Warzone 2100 upstream" || true
+
+      - name: Push imported history to develop
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd upstream
+          git remote add warfrontier "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push warfrontier HEAD:develop --force
