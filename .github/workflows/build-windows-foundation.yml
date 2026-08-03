@@ -1,0 +1,64 @@
+name: Build Windows Foundation
+
+on:
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout WarFrontier
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show imported upstream base
+        shell: pwsh
+        run: |
+          Write-Host "WarFrontier branch: $env:GITHUB_REF_NAME"
+          Write-Host "Commit: $env:GITHUB_SHA"
+          Get-Content docs/UPSTREAM_BASE_COMMIT.txt
+
+      - name: Install dependencies with vcpkg
+        shell: pwsh
+        run: |
+          ./get-dependencies_win.ps1 -VCPKG_BUILD_TYPE release
+
+      - name: Configure Release build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake" -DWZ_ENABLE_WARNINGS_AS_ERRORS=OFF
+
+      - name: Build Release
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Collect build output
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact | Out-Null
+          Get-ChildItem -Path build -Recurse -File | Where-Object {
+            $_.Extension -in '.exe', '.dll', '.pdb'
+          } | ForEach-Object {
+            Copy-Item $_.FullName -Destination artifact -Force
+          }
+          Get-ChildItem artifact
+
+      - name: Upload Windows foundation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarFrontier-Windows-Foundation
+          path: artifact
+          if-no-files-found: error
+          retention-days: 14
