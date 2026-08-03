@@ -9,6 +9,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { registerCreateUnitTool } from './tools/createUnit.js';
+
 type JsonRecord = Record<string, unknown>;
 
 type ValidationIssue = {
@@ -19,11 +21,11 @@ type ValidationIssue = {
 const server = new McpServer(
   {
     name: 'warfrontier-project-mcp',
-    version: '0.1.0',
+    version: '0.2.0',
   },
   {
     instructions:
-      'Use project_state before planning, next_task before implementing, and validate_federation after changing Federation data files.',
+      'Use project_state before planning, next_task before implementing, validate_federation after Federation data changes, and preview create_unit before confirming writes.',
   },
 );
 
@@ -251,6 +253,8 @@ server.registerTool(
     });
   },
 );
+
+registerCreateUnitTool(server, resolveRepositoryRoot, textResult);
 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
