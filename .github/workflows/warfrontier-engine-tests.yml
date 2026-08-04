@@ -1,0 +1,45 @@
+name: WarFrontier Engine Systems
+
+on:
+  push:
+    branches:
+      - feature/federation-faction-package
+    paths:
+      - "src/warfrontier_systems.h"
+      - "src/warfrontier_systems.cpp"
+      - "tests/warfrontier_systems_test.cpp"
+      - ".github/workflows/warfrontier-engine-tests.yml"
+  pull_request:
+    paths:
+      - "src/warfrontier_systems.h"
+      - "src/warfrontier_systems.cpp"
+      - "tests/warfrontier_systems_test.cpp"
+      - ".github/workflows/warfrontier-engine-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  combat-systems:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile combat systems tests
+        run: |
+          g++ \
+            -std=c++17 \
+            -Wall \
+            -Wextra \
+            -Wpedantic \
+            -Werror \
+            src/warfrontier_systems.cpp \
+            tests/warfrontier_systems_test.cpp \
+            -o warfrontier-systems-test
+
+      - name: Run combat systems tests
+        run: ./warfrontier-systems-test
