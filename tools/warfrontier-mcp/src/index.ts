@@ -9,6 +9,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { registerAnalyzeFederationTool } from './tools/analyzeFederation.js';
 import { registerCreateCombatPackageTool } from './tools/createCombatPackage.js';
 import { registerCreateResearchTool } from './tools/createResearch.js';
 import { registerCreateStructureTool } from './tools/createStructure.js';
@@ -20,10 +21,10 @@ type JsonRecord = Record<string, unknown>;
 type ValidationIssue = { file: string; message: string };
 
 const server = new McpServer(
-  { name: 'warfrontier-project-mcp', version: '0.6.0' },
+  { name: 'warfrontier-project-mcp', version: '0.7.0' },
   {
     instructions:
-      'Use project_state before planning, suggest_ids before creating new Federation content, next_task before implementing, validate_federation after data changes, and always preview builder tools before confirming writes.',
+      'Use project_state before planning, analyze_federation to inspect dependency health, suggest_ids before creating new Federation content, next_task before implementing, validate_federation after data changes, and always preview builder tools before confirming writes.',
   },
 );
 
@@ -115,6 +116,7 @@ server.registerTool(
       mcpBranch: 'feature/warfrontier-mcp',
       tools: [
         'project_state',
+        'analyze_federation',
         'suggest_ids',
         'next_task',
         'validate_federation',
@@ -164,7 +166,7 @@ server.registerTool(
 
     return textResult({
       status: 'ready-for-validation',
-      action: 'Run validate_federation, then compile the feature branch.',
+      action: 'Run analyze_federation and validate_federation, then compile the feature branch.',
     });
   },
 );
@@ -247,6 +249,7 @@ server.registerTool(
   },
 );
 
+registerAnalyzeFederationTool(server, resolveRepositoryRoot, textResult);
 registerSuggestIdsTool(server, resolveRepositoryRoot, textResult);
 registerCreateUnitTool(server, resolveRepositoryRoot, textResult);
 registerCreateWeaponTool(server, resolveRepositoryRoot, textResult);
