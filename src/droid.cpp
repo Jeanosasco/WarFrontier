@@ -874,6 +874,12 @@ void _syncDebugDroid(const char *function, DROID const *psDroid, char ch)
 /* The main update routine for all droids */
 void droidUpdate(DROID *psDroid)
 {
+	// WarFrontier combat systems update
+	if (psDroid->warfrontierCombatEnabled)
+	{
+		const float deltaSeconds = static_cast<float>(deltaGameTime) / GAME_TICKS_PER_SEC;
+		psDroid->warfrontierCombat.update(deltaSeconds);
+	}
 	Vector3i        dv;
 	UDWORD          percentDamage, emissionInterval;
 	BASE_OBJECT     *psBeingTargetted = nullptr;
