@@ -31,8 +31,9 @@ function nextNumericId(keys: string[], prefix: string, width: number): string {
 
   for (const key of keys) {
     const match = pattern.exec(key);
-    if (match) {
-      used.add(Number.parseInt(match[1], 10));
+    const numericPart = match?.[1];
+    if (numericPart !== undefined) {
+      used.add(Number.parseInt(numericPart, 10));
     }
   }
 
