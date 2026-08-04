@@ -9,6 +9,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { registerCreateCombatPackageTool } from './tools/createCombatPackage.js';
 import { registerCreateResearchTool } from './tools/createResearch.js';
 import { registerCreateStructureTool } from './tools/createStructure.js';
 import { registerCreateUnitTool } from './tools/createUnit.js';
@@ -18,7 +19,7 @@ type JsonRecord = Record<string, unknown>;
 type ValidationIssue = { file: string; message: string };
 
 const server = new McpServer(
-  { name: 'warfrontier-project-mcp', version: '0.4.0' },
+  { name: 'warfrontier-project-mcp', version: '0.5.0' },
   {
     instructions:
       'Use project_state before planning, next_task before implementing, validate_federation after Federation data changes, and always preview builder tools before confirming writes.',
@@ -119,6 +120,7 @@ server.registerTool(
         'create_weapon',
         'create_research',
         'create_structure',
+        'create_combat_package',
       ],
       files,
     });
@@ -247,6 +249,7 @@ registerCreateUnitTool(server, resolveRepositoryRoot, textResult);
 registerCreateWeaponTool(server, resolveRepositoryRoot, textResult);
 registerCreateResearchTool(server, resolveRepositoryRoot, textResult);
 registerCreateStructureTool(server, resolveRepositoryRoot, textResult);
+registerCreateCombatPackageTool(server, resolveRepositoryRoot, textResult);
 
 async function main(): Promise<void> {
   await server.connect(new StdioServerTransport());
