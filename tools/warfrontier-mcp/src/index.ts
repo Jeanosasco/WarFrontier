@@ -14,15 +14,16 @@ import { registerCreateResearchTool } from './tools/createResearch.js';
 import { registerCreateStructureTool } from './tools/createStructure.js';
 import { registerCreateUnitTool } from './tools/createUnit.js';
 import { registerCreateWeaponTool } from './tools/createWeapon.js';
+import { registerSuggestIdsTool } from './tools/suggestIds.js';
 
 type JsonRecord = Record<string, unknown>;
 type ValidationIssue = { file: string; message: string };
 
 const server = new McpServer(
-  { name: 'warfrontier-project-mcp', version: '0.5.0' },
+  { name: 'warfrontier-project-mcp', version: '0.6.0' },
   {
     instructions:
-      'Use project_state before planning, next_task before implementing, validate_federation after Federation data changes, and always preview builder tools before confirming writes.',
+      'Use project_state before planning, suggest_ids before creating new Federation content, next_task before implementing, validate_federation after data changes, and always preview builder tools before confirming writes.',
   },
 );
 
@@ -114,6 +115,7 @@ server.registerTool(
       mcpBranch: 'feature/warfrontier-mcp',
       tools: [
         'project_state',
+        'suggest_ids',
         'next_task',
         'validate_federation',
         'create_unit',
@@ -245,6 +247,7 @@ server.registerTool(
   },
 );
 
+registerSuggestIdsTool(server, resolveRepositoryRoot, textResult);
 registerCreateUnitTool(server, resolveRepositoryRoot, textResult);
 registerCreateWeaponTool(server, resolveRepositoryRoot, textResult);
 registerCreateResearchTool(server, resolveRepositoryRoot, textResult);
