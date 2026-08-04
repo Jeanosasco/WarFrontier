@@ -1,8 +1,10 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+
+import { writeFilesTransaction } from '../lib/atomicWrite.js';
 
 type JsonRecord = Record<string, unknown>;
 type ResolveRoot = (explicitRoot?: string) => Promise<string>;
@@ -99,8 +101,11 @@ export function registerCreateCombatPackageTool(
       const weaponPath = path.join(statsRoot, 'weapons.json');
       const researchPath = path.join(statsRoot, 'research.json');
       const templatePath = path.join(statsRoot, 'templates.json');
-      const packageDirectory = path.join(root, 'docs/combat-packages/federation');
-      const packagePath = path.join(packageDirectory, `${input.templateId}.md`);
+      const packagePath = path.join(
+        root,
+        'docs/combat-packages/federation',
+        `${input.templateId}.md`,
+      );
 
       const [bodies, weapons, research, templates] = await Promise.all([
         readJsonObject(bodyPath),
@@ -235,23 +240,38 @@ export function registerCreateCombatPackageTool(
         return textResult(preview);
       }
 
-      await mkdir(statsRoot, { recursive: true });
-      await mkdir(packageDirectory, { recursive: true });
       bodies[input.bodyId] = body;
       weapons[input.weaponId] = weapon;
       research[input.researchId] = researchTopic;
       templates[input.templateId] = template;
 
-      await Promise.all([
-        writeFile(bodyPath, `${JSON.stringify(sortRecord(bodies), null, 2)}\n`, 'utf8'),
-        writeFile(weaponPath, `${JSON.stringify(sortRecord(weapons), null, 2)}\n`, 'utf8'),
-        writeFile(researchPath, `${JSON.stringify(sortRecord(research), null, 2)}\n`, 'utf8'),
-        writeFile(templatePath, `${JSON.stringify(sortRecord(templates), null, 2)}\n`, 'utf8'),
-        writeFile(packagePath, specification, { encoding: 'utf8', flag: 'wx' }),
+      await writeFilesTransaction([
+        {
+          path: bodyPath,
+          content: `${JSON.stringify(sortRecord(bodies), null, 2)}\n`,
+        },
+        {
+          path: weaponPath,
+          content: `${JSON.stringify(sortRecord(weapons), null, 2)}\n`,
+        },
+        {
+          path: researchPath,
+          content: `${JSON.stringify(sortRecord(research), null, 2)}\n`,
+        },
+        {
+          path: templatePath,
+          content: `${JSON.stringify(sortRecord(templates), null, 2)}\n`,
+        },
+        {
+          path: packagePath,
+          content: specification,
+          mustNotExist: true,
+        },
       ]);
 
       return textResult({
         ...preview,
+        transaction: 'committed',
         written: [
           path.relative(root, bodyPath),
           path.relative(root, weaponPath),
