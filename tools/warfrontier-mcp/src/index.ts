@@ -10,22 +10,16 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 
 import { registerCreateUnitTool } from './tools/createUnit.js';
+import { registerCreateWeaponTool } from './tools/createWeapon.js';
 
 type JsonRecord = Record<string, unknown>;
-
-type ValidationIssue = {
-  file: string;
-  message: string;
-};
+type ValidationIssue = { file: string; message: string };
 
 const server = new McpServer(
-  {
-    name: 'warfrontier-project-mcp',
-    version: '0.2.0',
-  },
+  { name: 'warfrontier-project-mcp', version: '0.3.0' },
   {
     instructions:
-      'Use project_state before planning, next_task before implementing, validate_federation after Federation data changes, and preview create_unit before confirming writes.',
+      'Use project_state before planning, next_task before implementing, validate_federation after Federation data changes, and always preview builder tools before confirming writes.',
   },
 );
 
@@ -63,8 +57,7 @@ async function resolveRepositoryRoot(explicitRoot?: string): Promise<string> {
 }
 
 async function readJson(filePath: string): Promise<JsonRecord> {
-  const raw = await readFile(filePath, 'utf8');
-  const parsed: unknown = JSON.parse(raw);
+  const parsed: unknown = JSON.parse(await readFile(filePath, 'utf8'));
   if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
     throw new Error('Expected a JSON object at the file root.');
   }
@@ -87,9 +80,7 @@ server.registerTool(
   {
     title: 'WarFrontier Project State',
     description: 'Return a compact snapshot of the local WarFrontier repository.',
-    inputSchema: z.object({
-      repositoryRoot: z.string().optional(),
-    }),
+    inputSchema: z.object({ repositoryRoot: z.string().optional() }),
   },
   async ({ repositoryRoot }) => {
     const root = await resolveRepositoryRoot(repositoryRoot);
@@ -104,7 +95,6 @@ server.registerTool(
       'skills/warfrontier/SKILL.md',
       'skills/warfrontier-builder/SKILL.md',
     ];
-
     const files = Object.fromEntries(
       await Promise.all(
         importantFiles.map(async (relativePath) => [
@@ -119,6 +109,13 @@ server.registerTool(
       upstreamBase: '9360e01bcbfd1f260bc75262431630e6f4e5f65e',
       activeDevelopmentBranch: 'feature/federation-faction-package',
       mcpBranch: 'feature/warfrontier-mcp',
+      tools: [
+        'project_state',
+        'next_task',
+        'validate_federation',
+        'create_unit',
+        'create_weapon',
+      ],
       files,
     });
   },
@@ -129,9 +126,7 @@ server.registerTool(
   {
     title: 'Next WarFrontier Task',
     description: 'Identify the next unfinished implementation task from the project skills.',
-    inputSchema: z.object({
-      repositoryRoot: z.string().optional(),
-    }),
+    inputSchema: z.object({ repositoryRoot: z.string().optional() }),
   },
   async ({ repositoryRoot }) => {
     const root = await resolveRepositoryRoot(repositoryRoot);
@@ -172,9 +167,7 @@ server.registerTool(
     title: 'Validate Federation Prototype',
     description:
       'Validate Federation JSON syntax, required IDs and cross-file references without changing files.',
-    inputSchema: z.object({
-      repositoryRoot: z.string().optional(),
-    }),
+    inputSchema: z.object({ repositoryRoot: z.string().optional() }),
   },
   async ({ repositoryRoot }) => {
     const root = await resolveRepositoryRoot(repositoryRoot);
@@ -189,7 +182,6 @@ server.registerTool(
         issues.push({ file: fileName, message: 'File is missing.' });
         continue;
       }
-
       try {
         loaded[fileName] = await readJson(filePath);
       } catch (error) {
@@ -206,15 +198,9 @@ server.registerTool(
     const research = loaded['research.json'] ?? {};
     const templates = loaded['templates.json'] ?? {};
 
-    if (!('FED-H01' in bodies)) {
-      issues.push({ file: 'body.json', message: 'Missing required body ID FED-H01.' });
-    }
-    if (!('FED-WPN-001' in weapons)) {
-      issues.push({ file: 'weapons.json', message: 'Missing required weapon ID FED-WPN-001.' });
-    }
-    if (!('FED-D06' in structures)) {
-      issues.push({ file: 'structure.json', message: 'Missing required structure ID FED-D06.' });
-    }
+    if (!('FED-H01' in bodies)) issues.push({ file: 'body.json', message: 'Missing required body ID FED-H01.' });
+    if (!('FED-WPN-001' in weapons)) issues.push({ file: 'weapons.json', message: 'Missing required weapon ID FED-WPN-001.' });
+    if (!('FED-D06' in structures)) issues.push({ file: 'structure.json', message: 'Missing required structure ID FED-D06.' });
 
     for (const id of ['FED-RES-001', 'FED-RES-002', 'FED-RES-003', 'FED-RES-004']) {
       if (!(id in research)) {
@@ -231,8 +217,7 @@ server.registerTool(
       if (record.propulsion !== 'hover01') {
         issues.push({ file: 'templates.json', message: 'FED-TPL-H01 must use hover01 for the prototype.' });
       }
-      const weaponsList = record.weapons;
-      if (!Array.isArray(weaponsList) || !weaponsList.includes('FED-WPN-001')) {
+      if (!Array.isArray(record.weapons) || !record.weapons.includes('FED-WPN-001')) {
         issues.push({ file: 'templates.json', message: 'FED-TPL-H01 must reference FED-WPN-001.' });
       }
     } else if ('templates.json' in loaded) {
@@ -255,10 +240,10 @@ server.registerTool(
 );
 
 registerCreateUnitTool(server, resolveRepositoryRoot, textResult);
+registerCreateWeaponTool(server, resolveRepositoryRoot, textResult);
 
 async function main(): Promise<void> {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await server.connect(new StdioServerTransport());
   console.error('WarFrontier MCP server running on stdio');
 }
 
