@@ -35,6 +35,7 @@
 #include "weapondef.h"
 #include "orderdef.h"
 #include "actiondef.h"
+#include "warfrontier_systems.h"
 
 /*!
  * The number of components in the asParts / asBits arrays.
@@ -203,6 +204,10 @@ struct DROID : public BASE_OBJECT
 	int32_t			heightAboveMap;					///< Current calculated height above the terrain (set for VTOL-propulsion units)
 	/* repair data */
 	uint16_t		underRepair;					///< Number of other droids / structures currently repairing this unit (does not include self-repair tech)
+
+	// WarFrontier mechanics are opt-in so legacy units retain their original behaviour.
+	bool warfrontierCombatEnabled = false;
+	warfrontier::CombatSystemState warfrontierCombat;
 };
 
 #endif // __INCLUDED_DROIDDEF_H__
