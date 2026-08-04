@@ -25,7 +25,7 @@ async function readJsonObject(filePath: string): Promise<JsonRecord> {
   }
 }
 
-function nextNumericId(keys: string[], prefix: string, width: number): string {
+export function nextNumericId(keys: string[], prefix: string, width: number): string {
   const pattern = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
   const used = new Set<number>();
 
@@ -45,7 +45,7 @@ function nextNumericId(keys: string[], prefix: string, width: number): string {
   return `${prefix}${candidate.toString().padStart(width, '0')}`;
 }
 
-function nextTemplateId(keys: string[], suggestedBodyId: string): string {
+export function nextTemplateId(keys: string[], suggestedBodyId: string): string {
   const bodySuffix = suggestedBodyId.replace(/^FED-H/, '');
   const preferred = `FED-TPL-H${bodySuffix}`;
   if (!keys.includes(preferred)) {
