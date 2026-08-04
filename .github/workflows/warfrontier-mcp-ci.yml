@@ -40,6 +40,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Run MCP unit tests
+        run: npm test
+
       - name: Build MCP server
         run: npm run build
 
